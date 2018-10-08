@@ -1,0 +1,123 @@
+<h1>NPM download statistics</h1>
+<h2>
+    <input id="package" value="generator-jhipster" onchange="graph()">
+    <input id="initDate" value="2017-01-01" type="date" onchange="graph()">
+    <input id="finishDate" type="date" onchange="graph()">
+    <input type="submit" onclick="graph" value="Refresh">
+</h2>
+<div id="daily" style="width:600px; height:400px;"></div>
+<div id="monthly" style="width:600px; height:400px;"></div>
+<div id="yearly" style="width:600px; height:400px;"></div>
+
+<script src="lib/echarts.min.js" integrity="sha256-/2RfzVRD5Kjl526BsoU3rT7W5CMTMOJ5xYz6yfUjj7Q="></script>
+<script type="text/javascript">
+    const dailyChart = echarts.init(document.getElementById('daily'));
+    const monthlyChart = echarts.init(document.getElementById('monthly'));
+    const yearlyChart = echarts.init(document.getElementById('yearly'));
+    //const initDate = new Date("2017-01-01").toISOString().slice(0, 10);
+    const todaysDate = new Date().toISOString().slice(0, 10);
+    document.getElementById('finishDate').value = todaysDate;
+
+    function graph() {
+        const package = document.getElementById('package').value;
+        const initDate = document.getElementById('initDate').value;
+        const finishDate = document.getElementById('finishDate').value;
+
+        fetch("https://api.npmjs.org/downloads/range/" + initDate + ":" + finishDate + "/" + package)
+                .then((res) => res.json().then((json) => {
+                    console.log(json)
+                    const startDate = json.start;
+                    const endDate = json.end;
+
+                    const days = json.downloads
+                            .map(p => p.day)
+
+                    const dailyDownloads = json.downloads
+                            .map(p => p.downloads);
+
+                    dailyChart.setOption({
+                        title: {
+                            text: 'Daily "' + package + '" downloads from ' + startDate + ' to ' + endDate
+                        },
+                        tooltip: {},
+                        legend: {
+                            data: ['downloads per day']
+                        },
+                        xAxis: {
+                            data: days
+                        },
+                        yAxis: {},
+                        series: [{
+                            name: 'Downloads',
+                            type: 'line',
+                            smooth: 1,
+                            data: dailyDownloads
+                        }]
+                    });
+
+                    const months = [startDate.slice(0, 7)]
+                    const monthlyDownloads = [days[0]]
+                    let j = -1;
+                    for (let i = 0; i < days.length; i++) {
+                        if (i % 30 == 0) {
+                            j++;
+                            monthlyDownloads[j] = 0;
+                            months[j] = new Date(days[i]).toISOString().slice(0, 7);
+                        }
+                        monthlyDownloads[j] += parseInt(dailyDownloads[i]);
+                    }
+
+                    monthlyChart.setOption({
+                        title: {
+                            text: 'Monthly "' + package + '" downloads from ' + startDate + ' to ' + endDate
+                        },
+                        tooltip: {},
+                        legend: {
+                            data: ['downloads per month']
+                        },
+                        xAxis: {
+                            data: months
+                        },
+                        yAxis: {},
+                        series: [{
+                            name: 'Downloads',
+                            type: 'line',
+                            data: monthlyDownloads
+                        }]
+                    });
+
+                    const years = [startDate.slice(0, 4)]
+                    const yearlyDownloads = [days[0]]
+                    let k = -1;
+                    for (let i = 0; i < days.length; i++) {
+                        if (i % 365 == 0) {
+                            k++;
+                            yearlyDownloads[k] = 0;
+                            years[k] = new Date(days[i]).toISOString().slice(0, 4);
+                        }
+                        yearlyDownloads[k] += parseInt(dailyDownloads[i]);
+                    }
+
+                    yearlyChart.setOption({
+                        title: {
+                            text: 'Yearly "' + package + '" downloads from ' + startDate + ' to ' + endDate
+                        },
+                        tooltip: {},
+                        legend: {
+                            data: ['downloads per year']
+                        },
+                        xAxis: {
+                            data: years
+                        },
+                        yAxis: {},
+                        series: [{
+                            name: 'Downloads',
+                            type: 'line',
+                            data: yearlyDownloads
+                        }]
+                    });
+                }));
+    }
+
+    graph();
+</script>
