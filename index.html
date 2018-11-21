@@ -1,6 +1,6 @@
 <h1>NPM download statistics</h1>
 <h2>
-    <input id="package" value="generator-jhipster" onchange="graph()">
+    <input id="package" onchange="graph()">
     <input id="initDate" value="2017-01-01" type="date" onchange="graph()">
     <input id="finishDate" type="date" onchange="graph()">
     <input type="submit" onclick="graph" value="Refresh">
@@ -11,6 +11,8 @@
 
 <script src="lib/echarts.min.js" integrity="sha256-/2RfzVRD5Kjl526BsoU3rT7W5CMTMOJ5xYz6yfUjj7Q="></script>
 <script type="text/javascript">
+    const packageNameFromQueryParam = new URLSearchParams(window.location.search).get('package') || "";
+    document.querySelector('#package').setAttribute('value', packageNameFromQueryParam)
     const dailyChart = echarts.init(document.getElementById('daily'));
     const monthlyChart = echarts.init(document.getElementById('monthly'));
     const yearlyChart = echarts.init(document.getElementById('yearly'));
@@ -24,99 +26,99 @@
         const finishDate = document.getElementById('finishDate').value;
 
         fetch("https://api.npmjs.org/downloads/range/" + initDate + ":" + finishDate + "/" + package)
-                .then((res) => res.json().then((json) => {
-                    console.log(json)
-                    const startDate = json.start;
-                    const endDate = json.end;
+            .then((res) => res.json().then((json) => {
+                console.log(json)
+                const startDate = json.start;
+                const endDate = json.end;
 
-                    const days = json.downloads
-                            .map(p => p.day)
+                const days = json.downloads
+                        .map(p => p.day)
 
-                    const dailyDownloads = json.downloads
-                            .map(p => p.downloads);
+                const dailyDownloads = json.downloads
+                        .map(p => p.downloads);
 
-                    dailyChart.setOption({
-                        title: {
-                            text: 'Daily "' + package + '" downloads from ' + startDate + ' to ' + endDate
-                        },
-                        tooltip: {},
-                        legend: {
-                            data: ['downloads per day']
-                        },
-                        xAxis: {
-                            data: days
-                        },
-                        yAxis: {},
-                        series: [{
-                            name: 'Downloads',
-                            type: 'line',
-                            smooth: 1,
-                            data: dailyDownloads
-                        }]
-                    });
+                dailyChart.setOption({
+                    title: {
+                        text: 'Daily ' + package + ' downloads from ' + startDate + ' to ' + endDate
+                    },
+                    tooltip: {},
+                    legend: {
+                        data: ['downloads per day']
+                    },
+                    xAxis: {
+                        data: days
+                    },
+                    yAxis: {},
+                    series: [{
+                        name: 'Downloads',
+                        type: 'line',
+                        smooth: 1,
+                        data: dailyDownloads
+                    }]
+                });
 
-                    const months = [startDate.slice(0, 7)]
-                    const monthlyDownloads = [days[0]]
-                    let j = -1;
-                    for (let i = 0; i < days.length; i++) {
-                        if (i % 30 == 0) {
-                            j++;
-                            monthlyDownloads[j] = 0;
-                            months[j] = new Date(days[i]).toISOString().slice(0, 7);
-                        }
-                        monthlyDownloads[j] += parseInt(dailyDownloads[i]);
+                const months = [startDate.slice(0, 7)]
+                const monthlyDownloads = [days[0]]
+                let j = -1;
+                for (let i = 0; i < days.length; i++) {
+                    if (i % 30 == 0) {
+                        j++;
+                        monthlyDownloads[j] = 0;
+                        months[j] = new Date(days[i]).toISOString().slice(0, 7);
                     }
+                    monthlyDownloads[j] += parseInt(dailyDownloads[i]);
+                }
 
-                    monthlyChart.setOption({
-                        title: {
-                            text: 'Monthly "' + package + '" downloads from ' + startDate + ' to ' + endDate
-                        },
-                        tooltip: {},
-                        legend: {
-                            data: ['downloads per month']
-                        },
-                        xAxis: {
-                            data: months
-                        },
-                        yAxis: {},
-                        series: [{
-                            name: 'Downloads',
-                            type: 'line',
-                            data: monthlyDownloads
-                        }]
-                    });
+                monthlyChart.setOption({
+                    title: {
+                        text: 'Monthly ' + package + ' downloads from ' + startDate + ' to ' + endDate
+                    },
+                    tooltip: {},
+                    legend: {
+                        data: ['downloads per month']
+                    },
+                    xAxis: {
+                        data: months
+                    },
+                    yAxis: {},
+                    series: [{
+                        name: 'Downloads',
+                        type: 'line',
+                        data: monthlyDownloads
+                    }]
+                });
 
-                    const years = [startDate.slice(0, 4)]
-                    const yearlyDownloads = [days[0]]
-                    let k = -1;
-                    for (let i = 0; i < days.length; i++) {
-                        if (i % 365 == 0) {
-                            k++;
-                            yearlyDownloads[k] = 0;
-                            years[k] = new Date(days[i]).toISOString().slice(0, 4);
-                        }
-                        yearlyDownloads[k] += parseInt(dailyDownloads[i]);
+                const years = [startDate.slice(0, 4)]
+                const yearlyDownloads = [days[0]]
+                let k = -1;
+                for (let i = 0; i < days.length; i++) {
+                    if (i % 365 == 0) {
+                        k++;
+                        yearlyDownloads[k] = 0;
+                        years[k] = new Date(days[i]).toISOString().slice(0, 4);
                     }
+                    yearlyDownloads[k] += parseInt(dailyDownloads[i]);
+                }
 
-                    yearlyChart.setOption({
-                        title: {
-                            text: 'Yearly "' + package + '" downloads from ' + startDate + ' to ' + endDate
-                        },
-                        tooltip: {},
-                        legend: {
-                            data: ['downloads per year']
-                        },
-                        xAxis: {
-                            data: years
-                        },
-                        yAxis: {},
-                        series: [{
-                            name: 'Downloads',
-                            type: 'line',
-                            data: yearlyDownloads
-                        }]
-                    });
-                }));
+                yearlyChart.setOption({
+                    title: {
+                        text: 'Yearly ' + package + ' downloads from ' + startDate + ' to ' + endDate
+                    },
+                    tooltip: {},
+                    legend: {
+                        data: ['downloads per year']
+                    },
+                    xAxis: {
+                        data: years
+                    },
+                    yAxis: {},
+                    series: [{
+                        name: 'Downloads',
+                        type: 'line',
+                        data: yearlyDownloads
+                    }]
+                });
+            }));
     }
 
     graph();
